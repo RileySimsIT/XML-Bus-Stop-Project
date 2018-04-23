@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>LTC Bus Stops with XSLT and XML</title>
+</head>
+<body>
+    <h1>Enter an LTC route number (or leave empty) and click 'Update'</h1>
+    <input id="txtStop" type="text" />
+    <input id="btnUpdate" type="button" value="Update" onclick="RenderXSLT()"/>
+    <div id="xsltOutputContainer"></div>
+
+
+    <!--Javascript for using XSLT-->
+    <script type="text/javascript">
+        function loadXMLDoc(filename) {
+            if (window.ActiveXObject) {
+                xhttp = new ActiveXObject("Msxml2.XMLHTTP");
+            }
+            else {
+                xhttp = new XMLHttpRequest();
+            }
+            xhttp.open("GET", filename, false);
+
+            try {
+                xhttp.responseType = "msxml-document"
+            }
+            catch (err) { }
+            xhttp.send("");
+            return xhttp.responseXML;
+        }
+
+        function RenderXSLT() {
+            xml = loadXMLDoc("ltcstops.xml");
+            xslt = loadXMLDoc("stops.xslt");
+
+            var routeNumber = document.getElementById("txtStop").value;
+            //check if the input is set and if it's less than 10 add a leading 0
+            if (routeNumber < 10 && routeNumber != '') {
+                routeNumber = '0' + routeNumber;
+            }
+
+            if (window.ActiveXObject || xhttp.responseType == "msxml-document") {
+                var template = new ActiveXObject("Msxml2.XslTemplate.6.0");
+                template.stylesheet = xslt;
+
+                var proc = template.createProcessor();
+                proc.input = xml;
+                proc.addParameter("routeNum", routeNumber);
+
+                proc.transform();
+                document.getElementById("xsltOutputContainer").innerHTML = proc.output;
+            }
+            else if (typeof XSLTProcessor !== 'undefined') {
+                var xsltProcessor = new XSLTProcessor();
+                xsltProcessor.importStylesheet(xslt);
+
+                xsltProcessor.setParameter(null, "routeNum", routeNumber);
+
+                var resultDocument = xsltProcessor.transformToFragment(xml, document);
+                document.getElementById("xsltOutputContainer").innerHTML = "";
+                document.getElementById("xsltOutputContainer").appendChild(resultDocument);
+            }
+        }
+    </script>
+</body>
+</html>
